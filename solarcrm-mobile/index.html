@@ -1,0 +1,913 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="SolarCRM"/>
+<meta name="theme-color" content="#1a1410"/>
+<title>SolarCRM</title>
+<link rel="manifest" href="/manifest.json"/>
+<link rel="apple-touch-icon" href="/icon-192.svg"/>
+<link rel="icon" href="/icon-192.svg"/>
+<style>
+:root {
+  --gold: #d4890a;
+  --gold2: #f0a830;
+  --gold3: #a86808;
+  --ink: #1a1410;
+  --mid: #3d3228;
+  --muted: #7a6a58;
+  --faint: #b8a890;
+  --cream: #f5f0e8;
+  --cream2: #ede8de;
+  --cream3: #e4ddd0;
+  --border: #d8d0c4;
+  --green: #2d7a4a;
+  --green-bg: #e8f5ed;
+  --red: #c0392b;
+  --red-bg: #fdecea;
+  --blue: #2563a8;
+  --blue-bg: #e8f0fb;
+  --purple: #6d4c9a;
+  --purple-bg: #f0ebf8;
+  --safe-top: env(safe-area-inset-top);
+  --safe-bot: env(safe-area-inset-bottom);
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+body { font-family: -apple-system, 'SF Pro Display', sans-serif; background: var(--cream); color: var(--ink); height: 100dvh; overflow: hidden; display: flex; flex-direction: column; }
+button { font-family: inherit; cursor: pointer; border: none; background: none; }
+input, select, textarea { font-family: inherit; outline: none; }
+::-webkit-scrollbar { display: none; }
+
+/* STATUS BAR SPACER */
+.status-bar { height: var(--safe-top); background: var(--ink); flex-shrink: 0; }
+
+/* HEADER */
+.hdr { background: var(--ink); padding: 14px 18px 14px; display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.hdr-brand { display: flex; align-items: center; gap: 8px; font-family: 'Georgia', serif; font-size: 17px; font-weight: 700; color: var(--gold2); letter-spacing: .04em; }
+.hdr-brand svg { width: 20px; height: 20px; }
+.hdr-right { display: flex; align-items: center; gap: 10px; }
+.hdr-conn { display: flex; align-items: center; gap: 5px; font-size: 11px; color: #7a6a58; }
+.conn-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--red); transition: background .3s; flex-shrink: 0; }
+.conn-dot.on { background: var(--green); }
+.hdr-add { background: var(--gold); color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 20px; font-weight: 300; line-height: 1; }
+
+/* MAIN SCROLL AREA */
+#content { flex: 1; overflow-y: auto; overflow-x: hidden; -webkit-overflow-scrolling: touch; }
+
+/* BOTTOM NAV */
+.bnav { background: white; border-top: 1px solid var(--border); display: flex; padding-bottom: var(--safe-bot); flex-shrink: 0; }
+.bnav-btn { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 10px 4px 8px; font-size: 10px; font-weight: 600; color: var(--faint); transition: color .15s; }
+.bnav-btn.on { color: var(--gold); }
+.bnav-btn svg { width: 22px; height: 22px; }
+.bnav-badge { position: relative; }
+.bnav-badge::after { content: attr(data-n); position: absolute; top: -4px; right: -8px; background: var(--red); color: white; font-size: 9px; font-weight: 700; padding: 1px 4px; border-radius: 10px; min-width: 16px; text-align: center; display: none; }
+.bnav-badge[data-n]:not([data-n="0"])::after { display: block; }
+
+/* PAGES */
+.pg { display: none; padding: 16px; min-height: 100%; }
+.pg.on { display: block; }
+
+/* CARDS */
+.card { background: white; border: 1px solid var(--border); border-radius: 14px; margin-bottom: 12px; overflow: hidden; box-shadow: 0 2px 10px rgba(26,20,16,.07); }
+.card-body { padding: 14px 15px; }
+.card-hdr { padding: 12px 15px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; }
+.card-title { font-size: 14px; font-weight: 700; display: flex; align-items: center; gap: 7px; }
+.card-title svg { width: 15px; height: 15px; color: var(--gold); }
+
+/* DASHBOARD */
+.kpi-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+.kpi { background: white; border: 1px solid var(--border); border-radius: 12px; padding: 13px 14px; box-shadow: 0 2px 8px rgba(26,20,16,.06); }
+.kpi-lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.kpi-val { font-size: 26px; font-weight: 800; color: var(--ink); margin: 2px 0 1px; line-height: 1; }
+.kpi-sub { font-size: 10.5px; color: var(--muted); }
+.di { display: flex; align-items: flex-start; gap: 10px; padding: 11px 0; border-bottom: 1px solid var(--cream2); }
+.di:last-child { border-bottom: none; }
+.di-dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+.di-info { flex: 1; min-width: 0; }
+.di-title { font-size: 13.5px; font-weight: 600; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.di-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.di-tag { font-size: 10px; font-weight: 700; padding: 2px 8px; border-radius: 20px; white-space: nowrap; flex-shrink: 0; }
+
+/* LEAD LIST */
+.lead-item { display: flex; align-items: center; gap: 12px; padding: 13px 15px; border-bottom: 1px solid var(--cream2); }
+.lead-item:last-child { border-bottom: none; }
+.lead-icon { width: 40px; height: 40px; border-radius: 10px; background: #fff4e0; display: flex; align-items: center; justify-content: center; flex-shrink: 0; font-size: 18px; }
+.lead-info { flex: 1; min-width: 0; }
+.lead-name { font-size: 14px; font-weight: 700; color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lead-sub { font-size: 11.5px; color: var(--muted); margin-top: 2px; }
+.lead-right { display: flex; flex-direction: column; align-items: flex-end; gap: 5px; }
+
+/* BADGES */
+.badge { display: inline-flex; align-items: center; gap: 3px; padding: 3px 8px; border-radius: 20px; font-size: 10.5px; font-weight: 700; white-space: nowrap; }
+.badge::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: currentColor; opacity: .7; flex-shrink: 0; }
+.s0{background:#fff4e0;color:var(--gold3)}
+.s1{background:#e8f4ff;color:#1a6fb5}
+.s2{background:#ddf0ff;color:#155a9a}
+.s3{background:var(--blue-bg);color:var(--blue)}
+.s4{background:var(--purple-bg);color:var(--purple)}
+.s5{background:var(--green-bg);color:var(--green)}
+.s6{background:var(--red-bg);color:var(--red)}
+.money { font-size: 12px; font-weight: 700; color: var(--gold3); }
+
+/* SEARCH BAR */
+.search-bar { display: flex; align-items: center; gap: 8px; background: white; border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; margin-bottom: 14px; }
+.search-bar svg { width: 16px; height: 16px; color: var(--muted); flex-shrink: 0; }
+.search-bar input { flex: 1; background: none; border: none; font-size: 14px; color: var(--ink); }
+.search-bar input::placeholder { color: var(--faint); }
+
+/* STATUS FILTER SCROLL */
+.filter-scroll { display: flex; gap: 7px; overflow-x: auto; margin-bottom: 14px; padding-bottom: 2px; }
+.fpill { flex-shrink: 0; padding: 6px 13px; border-radius: 20px; font-size: 12px; font-weight: 600; border: 1px solid var(--border); color: var(--muted); background: white; transition: all .15s; }
+.fpill.on { background: var(--gold); color: white; border-color: var(--gold); }
+
+/* DETAIL PAGE */
+.det-hdr { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
+.back-btn { width: 36px; height: 36px; border-radius: 50%; background: white; border: 1px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.back-btn svg { width: 18px; height: 18px; color: var(--ink); }
+.det-title { font-size: 18px; font-weight: 800; color: var(--ink); flex: 1; min-width: 0; }
+.info-row { display: flex; flex-direction: column; gap: 2px; padding: 10px 0; border-bottom: 1px solid var(--cream2); }
+.info-row:last-child { border-bottom: none; }
+.info-lbl { font-size: 10px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.info-val { font-size: 14px; color: var(--ink); font-weight: 500; }
+.info-val.money { font-size: 18px; font-weight: 800; color: var(--gold3); }
+.info-val.pos { color: var(--green); font-weight: 700; }
+.info-val.neg { color: var(--red); font-weight: 700; }
+
+/* TASK ITEM */
+.task-item { display: flex; align-items: center; gap: 12px; padding: 12px 15px; border-bottom: 1px solid var(--cream2); }
+.task-item:last-child { border-bottom: none; }
+.tchk { width: 22px; height: 22px; border-radius: 6px; border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all .15s; }
+.tchk.done { background: var(--green); border-color: var(--green); }
+.tchk svg { display: none; width: 12px; height: 12px; color: white; }
+.tchk.done svg { display: block; }
+.task-lbl { flex: 1; font-size: 14px; font-weight: 500; color: var(--ink); }
+.task-lbl.done { text-decoration: line-through; color: var(--muted); }
+.tdue { font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+.d-ok { background: #fff4e0; color: var(--gold3); }
+.d-today { background: var(--blue-bg); color: var(--blue); }
+.d-over { background: var(--red-bg); color: var(--red); }
+
+/* MEETING ITEM */
+.meet-item { padding: 12px 15px; border-bottom: 1px solid var(--cream2); }
+.meet-item:last-child { border-bottom: none; }
+.meet-title { font-size: 14px; font-weight: 700; color: var(--blue); }
+.meet-dt { font-size: 12px; color: #4a80c0; margin-top: 2px; }
+.meet-loc { font-size: 12px; color: #6a90c0; margin-top: 1px; }
+.meet-cal { font-size: 11px; color: #4a80c0; margin-top: 3px; }
+
+/* SECTION LABEL */
+.sec-lbl { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin: 16px 0 8px; }
+
+/* EMPTY STATE */
+.empty { display: flex; flex-direction: column; align-items: center; gap: 10px; padding: 36px 20px; text-align: center; }
+.empty svg { width: 44px; height: 44px; color: var(--cream3); }
+.empty p { font-size: 14px; color: var(--muted); }
+
+/* FAB */
+.fab { position: fixed; right: 20px; bottom: calc(70px + var(--safe-bot)); width: 54px; height: 54px; border-radius: 50%; background: var(--gold); color: white; font-size: 26px; font-weight: 300; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(212,137,10,.45); z-index: 50; line-height: 1; display: none; }
+.fab.show { display: flex; }
+
+/* BOTTOM SHEET OVERLAY */
+.bs-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.5); z-index: 100; backdrop-filter: blur(3px); }
+.bs-overlay.open { display: block; }
+.bs { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-radius: 20px 20px 0 0; z-index: 101; max-height: 92dvh; display: flex; flex-direction: column; transform: translateY(100%); transition: transform .3s cubic-bezier(.32,0,.67,0); }
+.bs.open { transform: translateY(0); }
+.bs-drag { width: 40px; height: 4px; background: var(--cream3); border-radius: 2px; margin: 12px auto 0; flex-shrink: 0; }
+.bs-hdr { padding: 14px 18px 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; flex-shrink: 0; }
+.bs-title { font-size: 17px; font-weight: 800; color: var(--ink); }
+.bs-x { width: 28px; height: 28px; border-radius: 50%; background: var(--cream2); display: flex; align-items: center; justify-content: center; font-size: 16px; color: var(--muted); }
+.bs-body { padding: 14px 18px; overflow-y: auto; flex: 1; display: flex; flex-direction: column; gap: 12px; }
+.bs-foot { padding: 12px 18px; border-top: 1px solid var(--border); padding-bottom: calc(12px + var(--safe-bot)); flex-shrink: 0; }
+
+/* FORM */
+.fg { display: flex; flex-direction: column; gap: 6px; }
+.fg label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; }
+.fg input, .fg select, .fg textarea { background: var(--cream); border: 1px solid var(--border); border-radius: 10px; color: var(--ink); padding: 11px 13px; font-size: 15px; width: 100%; transition: border .15s; -webkit-appearance: none; }
+.fg input:focus, .fg select:focus, .fg textarea:focus { border-color: var(--gold); background: white; }
+.fg textarea { resize: none; min-height: 80px; }
+.frow { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.fsec { font-size: 10px; font-weight: 700; color: var(--gold3); text-transform: uppercase; letter-spacing: .12em; background: #fff4e0; padding: 6px 10px; border-radius: 7px; }
+.fsec-blue { font-size: 10px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .12em; background: var(--blue-bg); padding: 6px 10px; border-radius: 7px; }
+.btn-full { width: 100%; padding: 14px; border-radius: 12px; font-size: 16px; font-weight: 700; background: var(--gold); color: white; transition: background .15s; }
+.btn-full:active { background: var(--gold3); }
+.btn-ghost-full { width: 100%; padding: 13px; border-radius: 12px; font-size: 15px; font-weight: 600; background: var(--cream); color: var(--muted); border: 1px solid var(--border); margin-bottom: 8px; }
+
+/* SETUP */
+#setup-screen { position: fixed; inset: 0; background: var(--ink); z-index: 200; display: none; flex-direction: column; align-items: center; justify-content: center; padding: 28px; }
+#setup-screen.show { display: flex; }
+.setup-card { background: var(--cream); border-radius: 20px; padding: 28px 24px; width: 100%; max-width: 400px; }
+.setup-logo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+.setup-logo span { font-family: 'Georgia', serif; font-size: 20px; font-weight: 700; color: var(--gold3); }
+.setup-sub { font-size: 13.5px; color: var(--muted); margin-bottom: 24px; line-height: 1.6; }
+.setup-step { margin-bottom: 18px; }
+.setup-step label { font-size: 11px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; display: block; margin-bottom: 6px; }
+.setup-step input[type=text], .setup-step textarea { width: 100%; background: var(--cream2); border: 1px solid var(--border); border-radius: 10px; padding: 11px 13px; font-size: 14px; color: var(--ink); }
+.setup-step textarea { min-height: 90px; resize: none; font-size: 11px; font-family: monospace; }
+.setup-hint { font-size: 11px; color: var(--muted); margin-top: 5px; line-height: 1.5; }
+.setup-err { background: var(--red-bg); border: 1px solid #e0b0ac; color: var(--red); padding: 10px 13px; border-radius: 8px; font-size: 13px; display: none; margin-bottom: 12px; }
+.setup-err.show { display: block; }
+
+/* TOAST */
+#toasts { position: fixed; top: calc(var(--safe-top) + 60px); left: 16px; right: 16px; z-index: 999; display: flex; flex-direction: column; gap: 7px; pointer-events: none; }
+.toast { background: var(--ink); color: #e8ddd0; padding: 12px 16px; border-radius: 12px; font-size: 13.5px; display: flex; align-items: center; gap: 9px; box-shadow: 0 4px 20px rgba(0,0,0,.3); animation: tIn .25s ease; }
+.toast-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.tok .toast-dot { background: var(--green); }
+.terr .toast-dot { background: var(--red); }
+@keyframes tIn { from { opacity:0; transform:translateY(-10px); } to { opacity:1; transform:none; } }
+
+/* LOADING */
+.spinner { width: 32px; height: 32px; border: 3px solid var(--cream3); border-top-color: var(--gold); border-radius: 50%; animation: spin .7s linear infinite; margin: 40px auto; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* SV CARD */
+.sv-card { background: var(--blue-bg); border: 1px solid #c8d8f0; border-radius: 12px; padding: 13px 15px; }
+.sv-card-title { font-size: 10px; font-weight: 700; color: var(--blue); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 8px; }
+</style>
+</head>
+<body>
+
+<!-- SETUP SCREEN -->
+<div id="setup-screen" class="show">
+  <div class="setup-card">
+    <div class="setup-logo">
+      <svg width="26" height="26" viewBox="0 0 26 26" fill="none"><circle cx="13" cy="13" r="11" fill="rgba(212,137,10,.15)" stroke="#d4890a" stroke-width="1.5"/><path d="M13 3.5L16 10H22L17.5 13.5L19.5 20L13 16.5L6.5 20L8.5 13.5L4 10H10L13 3.5Z" fill="#d4890a"/></svg>
+      <span>SolarCRM</span>
+    </div>
+    <p class="setup-sub">Enter your Google Sheets credentials to sync your CRM data to this phone.</p>
+    <div class="setup-step">
+      <label>Spreadsheet ID</label>
+      <input type="text" id="s-sid" placeholder="Paste your Spreadsheet ID"/>
+      <div class="setup-hint">From the URL: docs.google.com/spreadsheets/d/<strong>ID_HERE</strong>/edit</div>
+    </div>
+    <div class="setup-step">
+      <label>Service Account Credentials JSON</label>
+      <textarea id="s-cred" placeholder="Paste the full contents of your credentials.json file here…"></textarea>
+      <div class="setup-hint">Open credentials.json on your Mac, select all (Cmd+A), copy, paste here.</div>
+    </div>
+    <div class="setup-err" id="s-err"></div>
+    <button class="btn-full" id="s-btn" onclick="doSetup()">Connect & Launch →</button>
+    <button class="btn-ghost-full" style="margin-top:8px" onclick="useDemo()">Try Demo Mode</button>
+  </div>
+</div>
+
+<!-- STATUS BAR -->
+<div class="status-bar"></div>
+
+<!-- HEADER -->
+<div class="hdr">
+  <div class="hdr-brand">
+    <svg viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="9" fill="rgba(240,168,48,.2)" stroke="#f0a830" stroke-width="1"/><path d="M10 2.5L12.5 8H17.5L13.5 11L15.5 16.5L10 13.5L4.5 16.5L6.5 11L2.5 8H7.5L10 2.5Z" fill="#f0a830"/></svg>
+    SolarCRM
+  </div>
+  <div class="hdr-right">
+    <div class="hdr-conn"><span class="conn-dot" id="cdot"></span><span id="clbl">—</span></div>
+    <button class="hdr-add" onclick="openLeadSheet()">+</button>
+  </div>
+</div>
+
+<!-- CONTENT -->
+<div id="content">
+  <!-- DASHBOARD -->
+  <div id="pg-dash" class="pg on">
+    <div style="font-family:'Georgia',serif;font-size:22px;font-weight:700;margin-bottom:3px" id="greeting"></div>
+    <div style="font-size:12px;color:var(--muted);margin-bottom:14px" id="dash-date"></div>
+    <div class="kpi-grid" id="kpis"></div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>Today's Actions</div>
+        <span id="n-today" style="font-size:11px;color:var(--muted)"></span>
+      </div>
+      <div class="card-body" style="padding:0 0 4px" id="today-list"></div>
+    </div>
+    <div class="card">
+      <div class="card-hdr">
+        <div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Upcoming Meetings</div>
+      </div>
+      <div style="padding:0 0 4px" id="meet-list"></div>
+    </div>
+  </div>
+
+  <!-- LEADS -->
+  <div id="pg-leads" class="pg">
+    <div class="search-bar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg><input type="search" id="srch" placeholder="Search leads…" oninput="renderLeads()"/></div>
+    <div class="filter-scroll" id="filters">
+      <button class="fpill on" onclick="setFilter('',this)">All</button>
+      <button class="fpill" onclick="setFilter('New',this)">New</button>
+      <button class="fpill" onclick="setFilter('Site Visit Scheduled',this)">Site Visit</button>
+      <button class="fpill" onclick="setFilter('Follow-up',this)">Follow-up</button>
+      <button class="fpill" onclick="setFilter('Proposal Sent',this)">Proposal</button>
+      <button class="fpill" onclick="setFilter('Closed Won',this)">Won</button>
+    </div>
+    <div class="card" style="overflow:hidden"><div id="leads-list"></div></div>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="pg-det" class="pg">
+    <div class="det-hdr">
+      <button class="back-btn" onclick="goBack()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="15 18 9 12 15 6"/></svg></button>
+      <div class="det-title" id="det-title"></div>
+    </div>
+    <div id="det-body"></div>
+  </div>
+
+  <!-- TASKS -->
+  <div id="pg-tasks" class="pg">
+    <div class="card" style="overflow:hidden">
+      <div class="card-hdr"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>All Tasks</div></div>
+      <div id="all-tasks"></div>
+    </div>
+  </div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="bnav-btn on" onclick="goNav('dash',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+    Dashboard
+  </button>
+  <button class="bnav-btn" onclick="goNav('leads',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+    Leads
+  </button>
+  <button class="bnav-btn bnav-badge" id="tasks-nav-btn" data-n="0" onclick="goNav('tasks',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>
+    Tasks
+  </button>
+</nav>
+
+<div id="toasts"></div>
+
+<!-- BOTTOM SHEET: ADD LEAD -->
+<div class="bs-overlay" id="lead-ovl" onclick="closeSheet('lead')"></div>
+<div class="bs" id="lead-bs">
+  <div class="bs-drag"></div>
+  <div class="bs-hdr"><div class="bs-title" id="lead-bs-title">Add New Lead</div><button class="bs-x" onclick="closeSheet('lead')">×</button></div>
+  <div class="bs-body">
+    <div class="fsec">📋 Basic Info</div>
+    <div class="fg"><label>Project / Building Name *</label><input type="text" id="lf-name" placeholder="e.g. Sunshine Towers"/></div>
+    <div class="frow">
+      <div class="fg"><label>Location</label><input type="text" id="lf-loc" placeholder="Bandra West"/></div>
+      <div class="fg"><label>Type</label><select id="lf-type"><option value="">— Select —</option><option>Commercial</option><option>Residential</option><option>Industrial</option><option>Society / Housing</option></select></div>
+    </div>
+    <div class="fg"><label>Status</label><select id="lf-stat"><option>New</option><option>Site Visit Scheduled</option><option>Site Visit Done</option><option>Follow-up</option><option>Proposal Sent</option><option>Closed Won</option><option>Closed Lost</option></select></div>
+    <div class="frow">
+      <div class="fg"><label>Contact Name</label><input type="text" id="lf-cname" placeholder="Mr. Rajesh"/></div>
+      <div class="fg"><label>Phone / Email</label><input type="text" id="lf-cph" placeholder="+91 98765…"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Size (kWp)</label><input type="number" id="lf-kwp" placeholder="10" step="0.1" min="0"/></div>
+      <div class="fg"><label>Site Visit Date</label><input type="date" id="lf-svdate"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Cost Price (₹)</label><input type="number" id="lf-cost" placeholder="500000" min="0"/></div>
+      <div class="fg"><label>Selling Price (₹)</label><input type="number" id="lf-sell" placeholder="650000" min="0"/></div>
+    </div>
+    <div class="fg"><label>Notes</label><textarea id="lf-notes" placeholder="Details, requirements…"></textarea></div>
+    <div class="fsec-blue">🔍 Site Visit (fill after visit)</div>
+    <div class="frow">
+      <div class="fg"><label>Employee Visited</label><input type="text" id="lf-svwho" placeholder="Name"/></div>
+      <div class="fg"><label>Visit Done Date</label><input type="date" id="lf-svdone"/></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Roof Type</label><select id="lf-roof"><option value="">—</option><option>RCC (Concrete)</option><option>Corrugated Metal</option><option>Plastic Sheet</option><option>Mangalore Tile</option><option>Flat Terrace</option><option>Other</option></select></div>
+      <div class="fg"><label>Obstructions</label><select id="lf-obst"><option value="">—</option><option>None</option><option>Minor</option><option>Major</option></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label>Earthing Pits</label><select id="lf-earth"><option value="">—</option><option>Yes</option><option>No — needs making</option><option>Partial</option></select></div>
+      <div class="fg"><label>Shading</label><select id="lf-shad"><option value="">—</option><option>None</option><option>Minor</option><option>Significant</option></select></div>
+    </div>
+    <div class="fg"><label>Site Visit Notes</label><textarea id="lf-svnotes" placeholder="On-site observations…" style="min-height:60px"></textarea></div>
+    <div style="height:8px"></div>
+  </div>
+  <div class="bs-foot"><button class="btn-full" id="lf-save-btn" onclick="saveLead()">Save Lead</button></div>
+</div>
+
+<!-- BOTTOM SHEET: ADD TASK -->
+<div class="bs-overlay" id="task-ovl" onclick="closeSheet('task')"></div>
+<div class="bs" id="task-bs">
+  <div class="bs-drag"></div>
+  <div class="bs-hdr"><div class="bs-title">Add Task</div><button class="bs-x" onclick="closeSheet('task')">×</button></div>
+  <div class="bs-body">
+    <div class="fg"><label>Task / Next Step *</label><input type="text" id="tf-title" placeholder="e.g. Call client for follow-up"/></div>
+    <div class="fg"><label>Due Date</label><input type="date" id="tf-due"/></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.5">📅 This will appear as a reminder on your Dashboard on the due date.</p>
+  </div>
+  <div class="bs-foot"><button class="btn-full" onclick="saveTask()">Add Task</button></div>
+</div>
+
+<!-- BOTTOM SHEET: ADD MEETING -->
+<div class="bs-overlay" id="meet-ovl" onclick="closeSheet('meet')"></div>
+<div class="bs" id="meet-bs">
+  <div class="bs-drag"></div>
+  <div class="bs-hdr"><div class="bs-title">Schedule Meeting</div><button class="bs-x" onclick="closeSheet('meet')">×</button></div>
+  <div class="bs-body">
+    <div class="fg"><label>Meeting Title *</label><input type="text" id="mf-title" placeholder="e.g. Site Visit — Sunshine Towers"/></div>
+    <div class="fg"><label>Date & Time</label><input type="datetime-local" id="mf-dt"/></div>
+    <div class="fg"><label>Location</label><input type="text" id="mf-loc" placeholder="Client's office / site"/></div>
+    <div class="fg"><label>Notes</label><textarea id="mf-notes" placeholder="Agenda, things to bring…" style="min-height:60px"></textarea></div>
+    <p style="font-size:12.5px;color:var(--muted);line-height:1.5">📆 Syncs to Google Calendar — shows on your phone.</p>
+  </div>
+  <div class="bs-foot"><button class="btn-full" onclick="saveMeeting()">Schedule Meeting</button></div>
+</div>
+
+<script>
+// ═══════════════════════════════════════
+// CONFIG — Replace with your real values
+// or let the setup screen handle it
+// ═══════════════════════════════════════
+const API_BASE = 'https://sheets.googleapis.com/v4/spreadsheets';
+
+// ═══════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════
+let leads=[], tasks=[], meetings=[];
+let sfilt='', curLeadId=null, prevPg='dash', taskLeadId=null, meetLeadId=null, editLeadId=null;
+let accessToken=null, sheetId=null, connected=false, demo=false;
+
+// Demo data
+const D=(d)=>{const dt=new Date();dt.setDate(dt.getDate()+d);return dt.toISOString().split('T')[0];};
+const today=()=>new Date().toISOString().split('T')[0];
+const DEMO_L=[
+  {id:'L1',projectName:'Sunshine Heights',location:'Bandra West',mapLink:'',type:'Residential',contactName:'Rajesh Sharma',contactPhone:'+91 98765 43210',sizeKwp:'8',costPrice:'480000',sellingPrice:'620000',status:'Follow-up',notes:'50-flat society.',siteVisitDate:D(1),svEmployee:'Salim',svDate:D(-2),svRoof:'RCC (Concrete)',svObstruction:'None',svEarthing:'Yes',svShading:'None',svNotes:'Good access.',createdAt:''},
+  {id:'L2',projectName:'TechPark Phase 2',location:'Andheri East',mapLink:'',type:'Commercial',contactName:'Priya Mehta',contactPhone:'priya@tp.in',sizeKwp:'50',costPrice:'2800000',sellingPrice:'3500000',status:'Proposal Sent',notes:'Large rooftop.',siteVisitDate:'',svEmployee:'',svDate:'',svRoof:'',svObstruction:'',svEarthing:'',svShading:'',svNotes:'',createdAt:''},
+  {id:'L3',projectName:'Star Industries',location:'Vasai',mapLink:'',type:'Industrial',contactName:'Suresh Patel',contactPhone:'+91 76543 21098',sizeKwp:'120',costPrice:'6500000',sellingPrice:'8200000',status:'Closed Won',notes:'Factory.',siteVisitDate:'',svEmployee:'',svDate:'',svRoof:'',svObstruction:'',svEarthing:'',svShading:'',svNotes:'',createdAt:''},
+];
+const DEMO_T=[
+  {id:'T1',leadId:'L1',title:'Follow up call with Rajesh',dueDate:today(),done:false,createdAt:''},
+  {id:'T2',leadId:'L2',title:'Send revised proposal',dueDate:D(-1),done:false,createdAt:''},
+];
+const DEMO_M=[
+  {id:'M1',leadId:'L2',title:'TechPark Proposal Walkthrough',dateTime:new Date(Date.now()+2*3600000).toISOString().slice(0,16),location:'TechPark Office',calEventId:'',notes:'',createdAt:''},
+];
+
+// ═══════════════════════════════════════
+// GOOGLE SHEETS ACCESS (via service account)
+// We use fetch directly with a JWT token
+// ═══════════════════════════════════════
+let credObj = null;
+
+async function getToken() {
+  if (!credObj) return null;
+  const now = Math.floor(Date.now()/1000);
+  const header = btoa(JSON.stringify({alg:'RS256',typ:'JWT'})).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const claim = btoa(JSON.stringify({
+    iss: credObj.client_email,
+    scope: 'https://www.googleapis.com/auth/spreadsheets https://www.googleapis.com/auth/calendar',
+    aud: 'https://oauth2.googleapis.com/token',
+    exp: now + 3600, iat: now
+  })).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const msg = header + '.' + claim;
+
+  // Sign with RSA private key using WebCrypto
+  const pem = credObj.private_key.replace(/-----.*?-----/g,'').replace(/\s/g,'');
+  const keyData = Uint8Array.from(atob(pem), c=>c.charCodeAt(0));
+  const key = await crypto.subtle.importKey('pkcs8', keyData.buffer, {name:'RSASSA-PKCS1-v1_5',hash:'SHA-256'}, false, ['sign']);
+  const sig = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', key, new TextEncoder().encode(msg));
+  const sigB64 = btoa(String.fromCharCode(...new Uint8Array(sig))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const jwt = msg + '.' + sigB64;
+
+  const resp = await fetch('https://oauth2.googleapis.com/token', {
+    method:'POST', headers:{'Content-Type':'application/x-www-form-urlencoded'},
+    body: `grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Ajwt-bearer&assertion=${jwt}`
+  });
+  const data = await resp.json();
+  return data.access_token || null;
+}
+
+async function sheetsGet(range) {
+  const tok = await getToken(); if(!tok) return [];
+  const url = `${API_BASE}/${sheetId}/values/${encodeURIComponent(range)}`;
+  const r = await fetch(url, {headers:{Authorization:`Bearer ${tok}`}});
+  const d = await r.json();
+  return d.values || [];
+}
+
+async function sheetsAppend(tab, row) {
+  const tok = await getToken(); if(!tok) return;
+  await fetch(`${API_BASE}/${sheetId}/values/${tab}!A:A:append?valueInputOption=RAW&insertDataOption=INSERT_ROWS`, {
+    method:'POST', headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},
+    body: JSON.stringify({values:[row]})
+  });
+}
+
+async function sheetsUpdate(range, row) {
+  const tok = await getToken(); if(!tok) return;
+  await fetch(`${API_BASE}/${sheetId}/values/${encodeURIComponent(range)}?valueInputOption=RAW`, {
+    method:'PUT', headers:{Authorization:`Bearer ${tok}`,'Content-Type':'application/json'},
+    body: JSON.stringify({values:[row]})
+  });
+}
+
+async function ensureHeaders() {
+  const TABS = {
+    Leads: ['ID','ProjectName','Location','MapLink','Type','ContactName','ContactPhone','SizeKwp','CostPrice','SellingPrice','Status','Notes','SiteVisitDate','SvEmployee','SvDate','SvRoof','SvObstruction','SvEarthing','SvShading','SvNotes','CreatedAt'],
+    Tasks: ['ID','LeadID','Title','DueDate','Done','CreatedAt'],
+    Meetings: ['ID','LeadID','Title','DateTime','Location','CalEventID','Notes','CreatedAt'],
+  };
+  for (const [tab,hdrs] of Object.entries(TABS)) {
+    await sheetsUpdate(`${tab}!A1`, hdrs);
+  }
+}
+
+// ═══════════════════════════════════════
+// SETUP
+// ═══════════════════════════════════════
+function initGreeting(){
+  const h=new Date().getHours();
+  document.getElementById('greeting').textContent=h<12?'Good morning ☀️':h<17?'Good afternoon 🌤️':'Good evening 🌙';
+  document.getElementById('dash-date').textContent=new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+}
+
+async function doSetup(){
+  const sid=document.getElementById('s-sid').value.trim();
+  const credTxt=document.getElementById('s-cred').value.trim();
+  const err=document.getElementById('s-err');
+  err.classList.remove('show');
+  if(!sid){err.textContent='Please enter your Spreadsheet ID.';err.classList.add('show');return;}
+  if(!credTxt){err.textContent='Please paste your credentials JSON.';err.classList.add('show');return;}
+  let parsed;
+  try{parsed=JSON.parse(credTxt);}catch(e){err.textContent='Invalid JSON — please paste the full contents of your credentials.json file.';err.classList.add('show');return;}
+  const btn=document.getElementById('s-btn');btn.textContent='Connecting…';btn.disabled=true;
+  credObj=parsed; sheetId=sid;
+  try {
+    const tok=await getToken();
+    if(!tok) throw new Error('Could not get access token. Check credentials.');
+    await ensureHeaders();
+    localStorage.setItem('solarcrm_sid',sid);
+    localStorage.setItem('solarcrm_cred',credTxt);
+    connected=true; setConn(true);
+    document.getElementById('setup-screen').classList.remove('show');
+    await loadAll();
+    toast('Connected to Google Sheets!','ok');
+  } catch(e) {
+    err.textContent=e.message||'Connection failed.';err.classList.add('show');
+  }
+  btn.textContent='Connect & Launch →';btn.disabled=false;
+}
+
+function useDemo(){
+  demo=true;leads=[...DEMO_L];tasks=[...DEMO_T];meetings=[...DEMO_M];
+  setConn(false);document.getElementById('setup-screen').classList.remove('show');
+  renderAll();toast('Demo Mode — changes will not be saved','ok');
+}
+
+function setConn(v){
+  connected=v;
+  document.getElementById('cdot').className='conn-dot'+(v?' on':'');
+  document.getElementById('clbl').textContent=v?'Sheets ✓':demo?'Demo':'—';
+}
+
+// ═══════════════════════════════════════
+// LOAD DATA
+// ═══════════════════════════════════════
+async function loadAll(){
+  if(demo){renderAll();return;}
+  try {
+    const [lr,tr,mr]=await Promise.all([loadLeads(),loadTasks(),loadMeetings()]);
+    renderAll();
+  } catch(e){ toast('Error loading data: '+e.message,'err'); }
+}
+
+async function loadLeads(){
+  const rows=await sheetsGet('Leads!A2:U1000');
+  leads=rows.filter(r=>r[0]).map(r=>({
+    id:r[0],projectName:r[1]||'',location:r[2]||'',mapLink:r[3]||'',
+    type:r[4]||'',contactName:r[5]||'',contactPhone:r[6]||'',
+    sizeKwp:r[7]||'',costPrice:r[8]||'',sellingPrice:r[9]||'',
+    status:r[10]||'New',notes:r[11]||'',siteVisitDate:r[12]||'',
+    svEmployee:r[13]||'',svDate:r[14]||'',svRoof:r[15]||'',
+    svObstruction:r[16]||'',svEarthing:r[17]||'',svShading:r[18]||'',
+    svNotes:r[19]||'',createdAt:r[20]||''
+  }));
+}
+async function loadTasks(){
+  const rows=await sheetsGet('Tasks!A2:F1000');
+  tasks=rows.filter(r=>r[0]).map(r=>({id:r[0],leadId:r[1],title:r[2],dueDate:r[3],done:r[4]==='true',createdAt:r[5]}));
+}
+async function loadMeetings(){
+  const rows=await sheetsGet('Meetings!A2:H1000');
+  meetings=rows.filter(r=>r[0]).map(r=>({id:r[0],leadId:r[1],title:r[2],dateTime:r[3],location:r[4]||'',calEventId:r[5]||'',notes:r[6]||'',createdAt:r[7]}));
+}
+
+function renderAll(){renderKPIs();renderDash();renderLeads();renderAllTasks();updateBadge();}
+
+// ═══════════════════════════════════════
+// NAVIGATION
+// ═══════════════════════════════════════
+function goNav(pg,el){
+  document.querySelectorAll('.pg').forEach(p=>p.classList.remove('on'));
+  document.querySelectorAll('.bnav-btn').forEach(b=>b.classList.remove('on'));
+  document.getElementById('pg-'+pg).classList.add('on');
+  document.getElementById('content').scrollTop=0;
+  if(el)el.classList.add('on');
+  if(pg!=='det')prevPg=pg;
+}
+function goBack(){ goNav(prevPg,document.querySelector('.bnav-btn.on')); curLeadId=null; }
+
+// ═══════════════════════════════════════
+// DASHBOARD
+// ═══════════════════════════════════════
+function renderKPIs(){
+  const active=leads.filter(l=>!['Closed Won','Closed Lost'].includes(l.status)).length;
+  const won=leads.filter(l=>l.status==='Closed Won').length;
+  const pipe=leads.reduce((s,l)=>s+(parseFloat(l.sellingPrice)||0),0);
+  const kwp=leads.filter(l=>l.status==='Closed Won').reduce((s,l)=>s+(parseFloat(l.sizeKwp)||0),0);
+  document.getElementById('kpis').innerHTML=
+    `<div class="kpi"><div class="kpi-lbl">Active Leads</div><div class="kpi-val">${active}</div><div class="kpi-sub">${leads.length} total</div></div>`+
+    `<div class="kpi"><div class="kpi-lbl">Closed Won</div><div class="kpi-val">${won}</div><div class="kpi-sub">${leads.length?Math.round(won/leads.length*100):0}% rate</div></div>`+
+    `<div class="kpi"><div class="kpi-lbl">Pipeline</div><div class="kpi-val" style="font-size:20px">₹${fmtN(pipe)}</div><div class="kpi-sub">quote value</div></div>`+
+    `<div class="kpi"><div class="kpi-lbl">kWp Won</div><div class="kpi-val">${kwp.toFixed(1)}</div><div class="kpi-sub">installed</div></div>`;
+}
+
+function renderDash(){
+  const td=today();
+  const items=[];
+  tasks.filter(t=>!t.done&&t.dueDate&&t.dueDate<td).forEach(t=>{const l=leads.find(x=>x.id===t.leadId);items.push({bg:'#c0392b',tag:'Overdue',tg:var_('red-bg'),tc:var_('red'),title:t.title,sub:l?.projectName||'',lid:t.leadId});});
+  tasks.filter(t=>!t.done&&t.dueDate===td).forEach(t=>{const l=leads.find(x=>x.id===t.leadId);items.push({bg:'#d4890a',tag:'Today',tg:'#fff4e0',tc:'#a86808',title:t.title,sub:l?.projectName||'',lid:t.leadId});});
+  leads.filter(l=>l.siteVisitDate&&l.status==='Site Visit Scheduled').forEach(l=>{
+    if(l.siteVisitDate<td)items.push({bg:'#c0392b',tag:'SV Overdue',tg:var_('red-bg'),tc:var_('red'),title:'Site visit overdue: '+l.projectName,sub:l.location||'',lid:l.id});
+    else if(l.siteVisitDate===td)items.push({bg:'#1a6fb5',tag:'Site Visit',tg:'#e8f4ff',tc:'#1a6fb5',title:'Site visit today: '+l.projectName,sub:l.location||'',lid:l.id});
+  });
+  meetings.filter(m=>m.dateTime&&m.dateTime.slice(0,10)===td).forEach(m=>{const l=leads.find(x=>x.id===m.leadId);const t=new Date(m.dateTime).toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});items.push({bg:'#2563a8',tag:'Meeting',tg:var_('blue-bg'),tc:var_('blue'),title:m.title,sub:(l?.projectName||'')+' · '+t,lid:m.leadId});});
+
+  document.getElementById('n-today').textContent=items.length+' item'+(items.length!==1?'s':'');
+  document.getElementById('today-list').innerHTML=items.length
+    ?items.map(i=>`<div class="di" onclick="openDet('${i.lid}')"><span class="di-dot" style="background:${i.bg}"></span><div class="di-info"><div class="di-title">${esc(i.title)}</div><div class="di-sub">${esc(i.sub)}</div></div><span class="di-tag" style="background:${i.tg};color:${i.tc}">${i.tag}</span></div>`).join('')
+    :`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg><p>All clear for today!</p></div>`;
+
+  const up=meetings.filter(m=>m.dateTime&&m.dateTime>=new Date().toISOString()).sort((a,b)=>a.dateTime.localeCompare(b.dateTime)).slice(0,5);
+  document.getElementById('meet-list').innerHTML=up.length
+    ?up.map(m=>{const l=leads.find(x=>x.id===m.leadId);const dt=new Date(m.dateTime);return`<div class="meet-item" onclick="openDet('${m.leadId}')"><div class="meet-title">${esc(m.title)}</div><div class="meet-dt">📅 ${dt.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})} at ${dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div>${m.location?`<div class="meet-loc">📍 ${esc(m.location)}</div>`:''}</div>`;}).join('')
+    :`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/></svg><p>No upcoming meetings</p></div>`;
+}
+
+// ═══════════════════════════════════════
+// LEADS
+// ═══════════════════════════════════════
+function setFilter(s,el){sfilt=s;document.querySelectorAll('#filters .fpill').forEach(p=>p.classList.remove('on'));if(el)el.classList.add('on');renderLeads();}
+
+function renderLeads(){
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  const fl=leads.filter(l=>{
+    if(sfilt&&l.status!==sfilt)return false;
+    if(q&&!`${l.projectName} ${l.contactName} ${l.location}`.toLowerCase().includes(q))return false;
+    return true;
+  });
+  const icon={Commercial:'🏢',Residential:'🏠',Industrial:'🏭','Society / Housing':'🏘️'};
+  document.getElementById('leads-list').innerHTML=fl.length
+    ?fl.map(l=>`<div class="lead-item" onclick="openDet('${l.id}')">
+        <div class="lead-icon">${icon[l.type]||'☀️'}</div>
+        <div class="lead-info"><div class="lead-name">${esc(l.projectName)}</div><div class="lead-sub">${esc(l.contactName)} · ${esc(l.location)}</div></div>
+        <div class="lead-right"><span class="badge ${bCls(l.status)}">${esc(l.status)}</span>${l.sizeKwp?`<span class="money">${l.sizeKwp} kWp</span>`:''}</div>
+      </div>`).join('')
+    :`<div class="empty"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="10"/></svg><p>No leads found</p></div>`;
+}
+
+// ═══════════════════════════════════════
+// LEAD DETAIL
+// ═══════════════════════════════════════
+function openDet(id){
+  curLeadId=id;const l=leads.find(x=>x.id===id);if(!l)return;
+  document.getElementById('det-title').textContent=l.projectName;
+  const myT=tasks.filter(t=>t.leadId===id);
+  const myM=meetings.filter(m=>m.leadId===id);
+  const cost=parseFloat(l.costPrice)||0,sell=parseFloat(l.sellingPrice)||0,margin=sell-cost;
+
+  document.getElementById('det-body').innerHTML=`
+    <div class="card">
+      <div class="card-body" style="padding:12px 15px">
+        <div class="info-row"><div class="info-lbl">Status</div><div class="info-val"><span class="badge ${bCls(l.status)}">${l.status}</span></div></div>
+        ${l.type?`<div class="info-row"><div class="info-lbl">Type</div><div class="info-val">${esc(l.type)}</div></div>`:''}
+        ${l.sizeKwp?`<div class="info-row"><div class="info-lbl">Size</div><div class="info-val">${l.sizeKwp} kWp</div></div>`:''}
+        ${l.location?`<div class="info-row"><div class="info-lbl">Location</div><div class="info-val">${esc(l.location)}</div></div>`:''}
+        ${l.siteVisitDate?`<div class="info-row"><div class="info-lbl">Site Visit Scheduled</div><div class="info-val" style="color:var(--blue);font-weight:600">📅 ${fmtD(l.siteVisitDate)}</div></div>`:''}
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-hdr"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Contact</div></div>
+      <div class="card-body">
+        <div class="info-row"><div class="info-lbl">Name</div><div class="info-val">${esc(l.contactName)||'—'}</div></div>
+        <div class="info-row"><div class="info-lbl">Phone / Email</div><div class="info-val"><a href="tel:${esc(l.contactPhone)}" style="color:var(--blue);text-decoration:none">${esc(l.contactPhone)||'—'}</a></div></div>
+      </div>
+    </div>
+    ${cost||sell?`<div class="card"><div class="card-hdr"><div class="card-title">💰 Financials</div></div><div class="card-body">
+      ${cost?`<div class="info-row"><div class="info-lbl">Cost Price</div><div class="info-val money">₹${fmtN(cost)}</div></div>`:''}
+      ${sell?`<div class="info-row"><div class="info-lbl">Selling Price</div><div class="info-val money">₹${fmtN(sell)}</div></div>`:''}
+      ${margin?`<div class="info-row"><div class="info-lbl">Margin</div><div class="info-val ${margin>=0?'pos':'neg'}">${margin>=0?'+':'-'}₹${fmtN(Math.abs(margin))} (${cost?Math.round(Math.abs(margin)/cost*100):0}%)</div></div>`:''}
+    </div></div>`:''}
+    ${l.notes?`<div class="card"><div class="card-hdr"><div class="card-title">📝 Notes</div></div><div class="card-body" style="font-size:14px;color:var(--mid);line-height:1.6;white-space:pre-wrap">${esc(l.notes)}</div></div>`:''}
+    ${l.svEmployee||l.svRoof?`<div class="sv-card" style="margin-bottom:12px"><div class="sv-card-title">🔍 Site Visit Report</div>
+      ${l.svEmployee?`<div class="info-row"><div class="info-lbl">Visited By</div><div class="info-val">${esc(l.svEmployee)}</div></div>`:''}
+      ${l.svDate?`<div class="info-row"><div class="info-lbl">Visit Date</div><div class="info-val">${fmtD(l.svDate)}</div></div>`:''}
+      ${l.svRoof?`<div class="info-row"><div class="info-lbl">Roof Type</div><div class="info-val">${esc(l.svRoof)}</div></div>`:''}
+      ${l.svObstruction?`<div class="info-row"><div class="info-lbl">Obstructions</div><div class="info-val">${esc(l.svObstruction)}</div></div>`:''}
+      ${l.svEarthing?`<div class="info-row"><div class="info-lbl">Earthing Pits</div><div class="info-val">${esc(l.svEarthing)}</div></div>`:''}
+    </div>`:''}
+    <div class="card" style="overflow:hidden">
+      <div class="card-hdr"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="9 11 12 14 22 4"/><path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/></svg>Tasks</div><button class="sblk-add" style="background:var(--gold);color:white;border:none;padding:5px 11px;border-radius:7px;font-size:11.5px;font-weight:600" onclick="openTaskSheet('${id}')">+ Add</button></div>
+      <div id="det-tasks">${myT.length?myT.map(t=>taskHTML(t)).join(''):`<div class="empty" style="padding:20px"><p>No tasks yet</p></div>`}</div>
+    </div>
+    <div class="card" style="overflow:hidden">
+      <div class="card-hdr"><div class="card-title"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>Meetings</div><button style="background:var(--gold);color:white;border:none;padding:5px 11px;border-radius:7px;font-size:11.5px;font-weight:600" onclick="openMeetSheet('${id}')">+ Add</button></div>
+      <div>${myM.length?myM.sort((a,b)=>a.dateTime.localeCompare(b.dateTime)).map(m=>{const dt=new Date(m.dateTime);return`<div class="meet-item"><div class="meet-title">${esc(m.title)}</div><div class="meet-dt">📅 ${dt.toLocaleDateString('en-IN',{weekday:'short',day:'numeric',month:'short'})} at ${dt.toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})}</div>${m.location?`<div class="meet-loc">📍 ${esc(m.location)}</div>`:''}</div>`;}).join(''):`<div class="empty" style="padding:20px"><p>No meetings yet</p></div>`}</div>
+    </div>
+    <button class="btn-full" style="margin-bottom:6px" onclick="openEditLead('${id}')">✏️ Edit This Lead</button>
+  `;
+  goNav('det',null);
+}
+
+function taskHTML(t){
+  const td=today();
+  const dc=t.done?'':(t.dueDate<td?'d-over':t.dueDate===td?'d-today':'d-ok');
+  return`<div class="task-item"><div class="tchk ${t.done?'done':''}" onclick="toggleTask('${t.id}')"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><polyline points="20 6 9 17 4 12"/></svg></div><span class="task-lbl ${t.done?'done':''}">${esc(t.title)}</span>${t.dueDate&&!t.done?`<span class="tdue ${dc}">${fmtD(t.dueDate)}</span>`:''}</div>`;
+}
+
+// ═══════════════════════════════════════
+// ALL TASKS PAGE
+// ═══════════════════════════════════════
+function renderAllTasks(){
+  const td=today();
+  const overdue=tasks.filter(t=>!t.done&&t.dueDate&&t.dueDate<td);
+  const todayT=tasks.filter(t=>!t.done&&t.dueDate===td);
+  const upcoming=tasks.filter(t=>!t.done&&t.dueDate>td);
+  const done=tasks.filter(t=>t.done).slice(0,10);
+  let html='';
+  if(overdue.length){html+=`<div class="sec-lbl" style="color:var(--red)">⚠ Overdue</div><div class="card" style="overflow:hidden">${overdue.map(t=>taskHTML(t)).join('')}</div>`;}
+  if(todayT.length){html+=`<div class="sec-lbl">📅 Today</div><div class="card" style="overflow:hidden">${todayT.map(t=>taskHTML(t)).join('')}</div>`;}
+  if(upcoming.length){html+=`<div class="sec-lbl">Upcoming</div><div class="card" style="overflow:hidden">${upcoming.map(t=>taskHTML(t)).join('')}</div>`;}
+  if(done.length){html+=`<div class="sec-lbl">✓ Completed</div><div class="card" style="overflow:hidden">${done.map(t=>taskHTML(t)).join('')}</div>`;}
+  if(!html)html=`<div class="empty" style="padding:50px 20px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><polyline points="20 6 9 17 4 12"/></svg><p>No tasks yet. Open a lead and add a next step!</p></div>`;
+  document.getElementById('all-tasks').innerHTML=html;
+}
+function updateBadge(){const td=today();const n=tasks.filter(t=>!t.done&&t.dueDate&&t.dueDate<=td).length;document.getElementById('tasks-nav-btn').dataset.n=n;}
+
+// ═══════════════════════════════════════
+// LEAD CRUD
+// ═══════════════════════════════════════
+function openLeadSheet(){editLeadId=null;clearLeadForm();document.getElementById('lead-bs-title').textContent='Add New Lead';document.getElementById('lf-save-btn').textContent='Save Lead';openSheet('lead');}
+function openEditLead(id){
+  const l=leads.find(x=>x.id===id);if(!l)return;
+  editLeadId=id;
+  document.getElementById('lead-bs-title').textContent='Edit Lead';
+  document.getElementById('lf-save-btn').textContent='Save Changes';
+  document.getElementById('lf-name').value=l.projectName;
+  document.getElementById('lf-loc').value=l.location;
+  document.getElementById('lf-type').value=l.type;
+  document.getElementById('lf-stat').value=l.status;
+  document.getElementById('lf-cname').value=l.contactName;
+  document.getElementById('lf-cph').value=l.contactPhone;
+  document.getElementById('lf-kwp').value=l.sizeKwp;
+  document.getElementById('lf-cost').value=l.costPrice;
+  document.getElementById('lf-sell').value=l.sellingPrice;
+  document.getElementById('lf-notes').value=l.notes;
+  document.getElementById('lf-svdate').value=l.siteVisitDate||'';
+  document.getElementById('lf-svwho').value=l.svEmployee||'';
+  document.getElementById('lf-svdone').value=l.svDate||'';
+  document.getElementById('lf-roof').value=l.svRoof||'';
+  document.getElementById('lf-obst').value=l.svObstruction||'';
+  document.getElementById('lf-earth').value=l.svEarthing||'';
+  document.getElementById('lf-shad').value=l.svShading||'';
+  document.getElementById('lf-svnotes').value=l.svNotes||'';
+  openSheet('lead');
+}
+function clearLeadForm(){['lf-name','lf-loc','lf-type','lf-cname','lf-cph','lf-kwp','lf-cost','lf-sell','lf-notes','lf-svdate','lf-svwho','lf-svdone','lf-roof','lf-obst','lf-earth','lf-shad','lf-svnotes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value='';});document.getElementById('lf-stat').value='New';}
+
+async function saveLead(){
+  const name=document.getElementById('lf-name').value.trim();
+  if(!name){toast('Project name is required','err');return;}
+  const lead={
+    id:editLeadId||'',projectName:name,
+    location:document.getElementById('lf-loc').value.trim(),
+    mapLink:'',
+    type:document.getElementById('lf-type').value,
+    status:document.getElementById('lf-stat').value,
+    contactName:document.getElementById('lf-cname').value.trim(),
+    contactPhone:document.getElementById('lf-cph').value.trim(),
+    sizeKwp:document.getElementById('lf-kwp').value,
+    costPrice:document.getElementById('lf-cost').value,
+    sellingPrice:document.getElementById('lf-sell').value,
+    notes:document.getElementById('lf-notes').value.trim(),
+    siteVisitDate:document.getElementById('lf-svdate').value,
+    svEmployee:document.getElementById('lf-svwho').value.trim(),
+    svDate:document.getElementById('lf-svdone').value,
+    svRoof:document.getElementById('lf-roof').value,
+    svObstruction:document.getElementById('lf-obst').value,
+    svEarthing:document.getElementById('lf-earth').value,
+    svShading:document.getElementById('lf-shad').value,
+    svNotes:document.getElementById('lf-svnotes').value.trim(),
+    createdAt:editLeadId?(leads.find(x=>x.id===editLeadId)?.createdAt||''):'',
+  };
+  const btn=document.getElementById('lf-save-btn');btn.textContent='Saving…';btn.disabled=true;
+  if(demo){
+    if(editLeadId){const i=leads.findIndex(x=>x.id===editLeadId);if(i!==-1)leads[i]={...lead,id:editLeadId};}
+    else{lead.id='L'+Date.now();leads.unshift(lead);}
+    closeSheet('lead');renderAll();if(curLeadId)openDet(editLeadId||lead.id);toast('Lead saved!','ok');
+  } else {
+    try {
+      const now=new Date().toISOString();
+      const row=[lead.id,lead.projectName,lead.location,lead.mapLink,lead.type,lead.contactName,lead.contactPhone,lead.sizeKwp,lead.costPrice,lead.sellingPrice,lead.status,lead.notes,lead.siteVisitDate,lead.svEmployee,lead.svDate,lead.svRoof,lead.svObstruction,lead.svEarthing,lead.svShading,lead.svNotes,lead.createdAt||now];
+      if(editLeadId){
+        const rows=await sheetsGet('Leads!A2:A1000');
+        const idx=rows.findIndex(r=>r[0]===editLeadId);
+        if(idx!==-1){const col=String.fromCharCode(64+row.length);await sheetsUpdate(`Leads!A${idx+2}:${col}${idx+2}`,row);}
+      } else {
+        row[0]='L'+Date.now();row[20]=now;
+        await sheetsAppend('Leads',row);
+      }
+      await loadLeads();closeSheet('lead');renderAll();if(curLeadId)openDet(editLeadId||row[0]);toast(editLeadId?'Lead updated!':'Lead saved!','ok');
+    } catch(e){toast('Save failed: '+e.message,'err');}
+  }
+  btn.textContent='Save Lead';btn.disabled=false;
+}
+
+// ═══════════════════════════════════════
+// TASKS
+// ═══════════════════════════════════════
+function openTaskSheet(lid){taskLeadId=lid;document.getElementById('tf-title').value='';document.getElementById('tf-due').value='';openSheet('task');}
+async function saveTask(){
+  const title=document.getElementById('tf-title').value.trim();if(!title){toast('Task title required','err');return;}
+  const t={id:'T'+Date.now(),leadId:taskLeadId,title,dueDate:document.getElementById('tf-due').value,done:false,createdAt:new Date().toISOString()};
+  if(demo){tasks.push(t);}
+  else{try{await sheetsAppend('Tasks',[t.id,t.leadId,t.title,t.dueDate,'false',t.createdAt]);}catch(e){toast('Save failed','err');return;}}
+  tasks.push(t);closeSheet('task');
+  if(curLeadId)openDet(curLeadId);
+  renderAllTasks();updateBadge();renderDash();
+  toast('Task added!','ok');
+}
+async function toggleTask(tid){
+  const t=tasks.find(x=>x.id===tid);if(!t)return;
+  t.done=!t.done;
+  if(!demo){
+    try{
+      const rows=await sheetsGet('Tasks!A2:A1000');
+      const idx=rows.findIndex(r=>r[0]===tid);
+      if(idx!==-1)await sheetsUpdate(`Tasks!E${idx+2}`,[String(t.done)]);
+    }catch(e){}
+  }
+  if(curLeadId)openDet(curLeadId);
+  renderAllTasks();updateBadge();renderDash();
+}
+
+// ═══════════════════════════════════════
+// MEETINGS
+// ═══════════════════════════════════════
+function openMeetSheet(lid){
+  meetLeadId=lid;const l=leads.find(x=>x.id===lid);
+  document.getElementById('mf-title').value=l?'Meeting — '+l.projectName:'';
+  document.getElementById('mf-dt').value='';document.getElementById('mf-loc').value='';document.getElementById('mf-notes').value='';
+  openSheet('meet');
+}
+async function saveMeeting(){
+  const title=document.getElementById('mf-title').value.trim();if(!title){toast('Title required','err');return;}
+  const m={id:'M'+Date.now(),leadId:meetLeadId,title,dateTime:document.getElementById('mf-dt').value,location:document.getElementById('mf-loc').value.trim(),calEventId:'',notes:document.getElementById('mf-notes').value.trim(),createdAt:new Date().toISOString()};
+  if(demo){meetings.push(m);}
+  else{try{await sheetsAppend('Meetings',[m.id,m.leadId,m.title,m.dateTime,m.location,'',m.notes,m.createdAt]);}catch(e){toast('Save failed','err');return;}}
+  meetings.push(m);closeSheet('meet');
+  if(curLeadId)openDet(curLeadId);
+  renderDash();toast('Meeting scheduled!','ok');
+}
+
+// ═══════════════════════════════════════
+// SHEET HELPERS
+// ═══════════════════════════════════════
+function openSheet(id){document.getElementById(id+'-ovl').classList.add('open');setTimeout(()=>document.getElementById(id+'-bs').classList.add('open'),10);}
+function closeSheet(id){document.getElementById(id+'-bs').classList.remove('open');setTimeout(()=>document.getElementById(id+'-ovl').classList.remove('open'),300);}
+
+// ═══════════════════════════════════════
+// UTILS
+// ═══════════════════════════════════════
+function var_(k){return getComputedStyle(document.documentElement).getPropertyValue('--'+k).trim();}
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+function fmtD(d){if(!d||d.length<8)return d||'';try{const[y,m,day]=d.split('-');return`${parseInt(day)} ${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][parseInt(m)-1]}`;}catch{return d;}}
+function fmtN(n){n=Math.abs(n);if(n>=10000000)return(n/10000000).toFixed(1)+'Cr';if(n>=100000)return(n/100000).toFixed(1)+'L';if(n>=1000)return(n/1000).toFixed(0)+'K';return String(Math.round(n));}
+function bCls(s){return{'New':'s0','Site Visit Scheduled':'s1','Site Visit Done':'s2','Follow-up':'s3','Proposal Sent':'s4','Closed Won':'s5','Closed Lost':'s6'}[s]||'s0';}
+function toast(msg,type){const w=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast ${type==='ok'?'tok':'terr'}`;el.innerHTML=`<span class="toast-dot"></span>${msg}`;w.appendChild(el);setTimeout(()=>el.remove(),3500);}
+
+// ═══════════════════════════════════════
+// STARTUP
+// ═══════════════════════════════════════
+initGreeting();
+// Try saved credentials
+const savedSid=localStorage.getItem('solarcrm_sid');
+const savedCred=localStorage.getItem('solarcrm_cred');
+if(savedSid&&savedCred){
+  document.getElementById('s-sid').value=savedSid;
+  document.getElementById('s-cred').value=savedCred;
+  credObj=JSON.parse(savedCred);sheetId=savedSid;
+  setConn(false);
+  document.getElementById('setup-screen').classList.remove('show');
+  getToken().then(tok=>{if(tok){connected=true;setConn(true);loadAll().catch(()=>renderAll());}else{document.getElementById('setup-screen').classList.add('show');}}).catch(()=>{document.getElementById('setup-screen').classList.add('show');});
+}
+
+// Register service worker for offline support
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js').catch(() => {});
+  });
+}
+</script>
+</body>
+</html>
