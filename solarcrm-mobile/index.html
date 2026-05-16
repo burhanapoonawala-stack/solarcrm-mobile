@@ -230,6 +230,37 @@ input, select, textarea { font-family: inherit; outline: none; }
 <body>
 
 <!-- SETUP SCREEN -->
+
+<!-- LOGIN SCREEN -->
+<div id="login-screen" style="display:flex;position:fixed;inset:0;background:#0a2010;z-index:300;flex-direction:column;align-items:center;justify-content:center;padding:28px">
+  <div style="width:100%;max-width:360px;display:flex;flex-direction:column;align-items:center;gap:0">
+    <img src="apple-touch-icon.png" style="width:90px;height:90px;border-radius:20px;margin-bottom:22px;box-shadow:0 8px 32px rgba(0,0,0,.4)"/>
+    <div style="font-family:Georgia,serif;font-size:28px;font-weight:700;color:#4caf72;margin-bottom:4px">SolarCRM</div>
+    <div style="font-size:13px;color:#5a8a6a;margin-bottom:36px;letter-spacing:.06em">RESSCO</div>
+    <div id="login-err" style="background:rgba(192,57,43,.15);border:1px solid rgba(192,57,43,.4);color:#e88;padding:10px 16px;border-radius:10px;font-size:13px;margin-bottom:16px;width:100%;text-align:center;display:none"></div>
+    <div style="width:100%;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <label style="font-size:10.5px;font-weight:700;color:#5a8a6a;text-transform:uppercase;letter-spacing:.1em">Username</label>
+        <input id="login-user" type="text" placeholder="Enter username" autocomplete="off" autocapitalize="none"
+          style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:white;padding:14px 16px;font-size:16px;width:100%;outline:none;transition:border .15s"
+          onfocus="this.style.borderColor='#4caf72'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"
+          onkeydown="if(event.key==='Enter')document.getElementById('login-pin').focus()"/>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:5px">
+        <label style="font-size:10.5px;font-weight:700;color:#5a8a6a;text-transform:uppercase;letter-spacing:.1em">PIN</label>
+        <input id="login-pin" type="password" inputmode="numeric" placeholder="Enter PIN" autocomplete="off"
+          style="background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:12px;color:white;padding:14px 16px;font-size:16px;width:100%;outline:none;transition:border .15s;letter-spacing:.2em"
+          onfocus="this.style.borderColor='#4caf72'" onblur="this.style.borderColor='rgba(255,255,255,.12)'"
+          onkeydown="if(event.key==='Enter')doLogin()"/>
+      </div>
+      <button onclick="doLogin()" style="background:#2d7a4a;color:white;border:none;padding:15px;border-radius:12px;font-size:16px;font-weight:700;margin-top:6px;width:100%;transition:background .15s;font-family:-apple-system,sans-serif"
+        onmousedown="this.style.background='#1e5c35'" onmouseup="this.style.background='#2d7a4a'">
+        Login →
+      </button>
+    </div>
+  </div>
+</div>
+
 <div id="setup-screen" class="show">
   <div class="setup-card">
     <div class="setup-logo">
@@ -886,11 +917,43 @@ function fmtN(n){n=Math.abs(n);if(n>=10000000)return(n/10000000).toFixed(1)+'Cr'
 function bCls(s){return{'New':'s0','Site Visit Scheduled':'s1','Site Visit Done':'s2','Follow-up':'s3','Proposal Sent':'s4','Closed Won':'s5','Closed Lost':'s6'}[s]||'s0';}
 function toast(msg,type){const w=document.getElementById('toasts');const el=document.createElement('div');el.className=`toast ${type==='ok'?'tok':'terr'}`;el.innerHTML=`<span class="toast-dot"></span>${msg}`;w.appendChild(el);setTimeout(()=>el.remove(),3500);}
 
+
+// ═══════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════
+const USERS = {
+  'director': { pin: '1606515253', role: 'superadmin', name: 'Burhanuddin Poonawala' }
+};
+
+function doLogin() {
+  const user = document.getElementById('login-user').value.trim().toLowerCase();
+  const pin  = document.getElementById('login-pin').value.trim();
+  const err  = document.getElementById('login-err');
+  err.style.display = 'none';
+  if (!USERS[user]) { err.textContent = 'Username not found.'; err.style.display = 'block'; return; }
+  if (USERS[user].pin !== pin) { err.textContent = 'Incorrect PIN. Try again.'; err.style.display = 'block'; document.getElementById('login-pin').value = ''; return; }
+  // Success
+  sessionStorage.setItem('solarcrm_auth', user);
+  document.getElementById('login-screen').style.display = 'none';
+  // Continue with normal startup
+  startApp();
+}
+
+function checkLogin() {
+  const auth = sessionStorage.getItem('solarcrm_auth');
+  if (auth && USERS[auth]) {
+    document.getElementById('login-screen').style.display = 'none';
+    startApp();
+  }
+  // else login screen stays visible
+}
+
 // ═══════════════════════════════════════
 // STARTUP
 // ═══════════════════════════════════════
-initGreeting();
-// Try saved credentials
+function startApp() {
+  initGreeting();
+  // Try saved credentials
 const savedSid=localStorage.getItem('solarcrm_sid');
 const savedCred=localStorage.getItem('solarcrm_cred');
 if(savedSid&&savedCred){
@@ -901,6 +964,10 @@ if(savedSid&&savedCred){
   document.getElementById('setup-screen').classList.remove('show');
   getToken().then(tok=>{if(tok){connected=true;setConn(true);loadAll().catch(()=>renderAll());}else{document.getElementById('setup-screen').classList.add('show');}}).catch(()=>{document.getElementById('setup-screen').classList.add('show');});
 }
+
+} // end startApp
+
+checkLogin();
 
 // Register service worker for offline support
 if ('serviceWorker' in navigator) {
